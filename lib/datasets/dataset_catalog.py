@@ -25,7 +25,7 @@ import os
 from core.config import cfg
 
 # Path to data dir
-_DATA_DIR = cfg.DATA_DIR
+_DATA_DIR = os.environ['DATA_DIR'] if 'DATA_DIR' in os.environ else cfg.DATA_DIR
 
 # Required dataset entry keys
 IM_DIR = 'image_directory'
@@ -218,3 +218,22 @@ DATASETS = {
             _DATA_DIR + '/VOC2012/VOCdevkit2012'
     }
 }
+
+# Update with custom datasets
+# User can define a custom dataset as `dataset_catalog.py`
+# where it is obligatory to define DATASETS dictionary
+# this DATASETS will be added to built-in Detectron DATASETS
+if 'CUSTOM_DATASETS' in os.environ:
+
+    filepath = os.environ['CUSTOM_DATASETS']
+    assert os.path.exists(filepath), "Custom dataset catalog python file is not found at {}".format(filepath)
+
+    from importlib import util
+    # Load custom module
+    spec = util.spec_from_file_location("dataset_catalog", filepath)
+    custom_module = util.module_from_spec(spec)
+    spec.loader.exec_module(custom_module)
+    custom_datasets = custom_module.__dict__
+
+    assert 'DATASETS' in custom_datasets, "DATASET dictionary is not found"
+    DATASETS.update(custom_datasets['DATASETS'])

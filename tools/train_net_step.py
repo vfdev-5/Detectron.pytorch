@@ -43,9 +43,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a X-RCNN network')
 
     parser.add_argument(
-        '--dataset', dest='dataset', required=True,
-        help='Dataset to use')
-    parser.add_argument(
         '--cfg', dest='cfg_file', required=True,
         help='Config file for training (and optionally testing)')
     parser.add_argument(
@@ -149,15 +146,6 @@ def main():
         cfg.CUDA = True
     else:
         raise ValueError("Need Cuda device to run !")
-
-    if args.dataset == "coco2017":
-        cfg.TRAIN.DATASETS = ('coco_2017_train',)
-        cfg.MODEL.NUM_CLASSES = 81
-    elif args.dataset == "keypoints_coco2017":
-        cfg.TRAIN.DATASETS = ('keypoints_coco_2017_train',)
-        cfg.MODEL.NUM_CLASSES = 2
-    else:
-        raise ValueError("Unexpected args.dataset: {}".format(args.dataset))
 
     cfg_from_file(args.cfg_file)
     if args.set_cfgs is not None:
@@ -340,7 +328,8 @@ def main():
 
     ### Training Setups ###
     args.run_name = misc_utils.get_run_name() + '_step'
-    output_dir = misc_utils.get_output_dir(args, args.run_name)
+    # output_dir = misc_utils.get_output_dir(args, args.run_name)
+    output_dir = cfg.OUTPUT_DIR
     args.cfg_filename = os.path.basename(args.cfg_file)
 
     if not args.no_save:

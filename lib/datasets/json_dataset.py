@@ -207,7 +207,8 @@ class JsonDataset(object):
 
     def _add_gt_annotations(self, entry):
         """Add ground truth annotation metadata to an roidb entry."""
-        ann_ids = self.COCO.getAnnIds(imgIds=entry['id'], iscrowd=None)
+        _id = [entry['id'], ] if isinstance(entry['id'], str) else entry['id']
+        ann_ids = self.COCO.getAnnIds(imgIds=_id, iscrowd=None)
         objs = self.COCO.loadAnns(ann_ids)
         # Sanitize bboxes -- some are invalid
         valid_objs = []

@@ -42,9 +42,6 @@ cv2.ocl.setUseOpenCL(False)
 def parse_args():
     """Parse in command line arguments"""
     parser = argparse.ArgumentParser(description='Demonstrate mask-rcnn results')
-    parser.add_argument(
-        '--dataset', required=True,
-        help='training dataset')
 
     parser.add_argument(
         '--cfg', dest='cfg_file', required=True,
@@ -72,7 +69,7 @@ def parse_args():
         help='directory to save demo results',
         default="infer_outputs")
     parser.add_argument(
-        '--merge_pdfs', type=distutils.util.strtobool, default=True)
+        '--merge_pdfs', type=distutils.util.strtobool, default=False)
 
     args = parser.parse_args()
 
@@ -91,15 +88,6 @@ def main():
 
     assert args.image_dir or args.images
     assert bool(args.image_dir) ^ bool(args.images)
-
-    if args.dataset.startswith("coco"):
-        dataset = datasets.get_coco_dataset()
-        cfg.MODEL.NUM_CLASSES = len(dataset.classes)
-    elif args.dataset.startswith("keypoints_coco"):
-        dataset = datasets.get_coco_dataset()
-        cfg.MODEL.NUM_CLASSES = 2
-    else:
-        raise ValueError('Unexpected dataset name: {}'.format(args.dataset))
 
     print('load cfg from file: {}'.format(args.cfg_file))
     cfg_from_file(args.cfg_file)
@@ -139,29 +127,24 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    for i in xrange(num_images):
-        print('img', i)
-        im = cv2.imread(imglist[i])
+    for i, im_name in enumerate(imglist):
+
+        out_name = os.path.join(
+            args.output_dir, '{}'.format(os.path.basename(im_name) + '.png')
+        )
+        print('Processing {} -> {}'.format(im_name, out_name))
+
+        im = cv2.imread(im_name)
         assert im is not None
 
         timers = defaultdict(Timer)
 
         cls_boxes, cls_segms, cls_keyps = im_detect_all(maskRCNN, im, timers=timers)
 
-        im_name, _ = os.path.splitext(os.path.basename(imglist[i]))
-        vis_utils.vis_one_image(
-            im[:, :, ::-1],  # BGR -> RGB for visualization
-            im_name,
-            args.output_dir,
-            cls_boxes,
-            cls_segms,
-            cls_keyps,
-            dataset=dataset,
-            box_alpha=0.3,
-            show_class=True,
-            thresh=0.7,
-            kp_thresh=2
-        )
+        im = vis_utils.vis_one_image_opencv(im, cls_boxes, cls_segms, cls_keyps,
+                                            thresh=0.5,
+                                            show_box=True, show_class=True)
+        cv2.imwrite(out_name, im)
 
     if args.merge_pdfs and num_images > 1:
         merge_out_path = '{}/results.pdf'.format(args.output_dir)

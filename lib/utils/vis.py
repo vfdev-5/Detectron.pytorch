@@ -89,12 +89,29 @@ def convert_from_cls_format(cls_boxes, cls_segms, cls_keyps):
     return boxes, segms, keyps, classes
 
 
-def vis_bbox_opencv(img, bbox, thick=1):
+def vis_bbox(img, bbox, thick=1):
     """Visualizes a bounding box."""
     (x0, y0, w, h) = bbox
     x1, y1 = int(x0 + w), int(y0 + h)
     x0, y0 = int(x0), int(y0)
     cv2.rectangle(img, (x0, y0), (x1, y1), _GREEN, thickness=thick)
+    return img
+
+
+def vis_class(img, pos, class_str, font_scale=0.35):
+    """Visualizes the class."""
+    x0, y0 = int(pos[0]), int(pos[1])
+    # Compute text size.
+    txt = class_str
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    ((txt_w, txt_h), _) = cv2.getTextSize(txt, font, font_scale, 1)
+    # Place text background.
+    back_tl = x0, y0 - int(1.3 * txt_h)
+    back_br = x0 + txt_w, y0
+    cv2.rectangle(img, back_tl, back_br, _GREEN, -1)
+    # Show text.
+    txt_tl = x0, y0 - int(0.3 * txt_h)
+    cv2.putText(img, txt, txt_tl, font, font_scale, _GRAY, lineType=cv2.LINE_AA)
     return img
 
 
@@ -242,3 +259,53 @@ def vis_one_image(
         output_name = os.path.basename(im_name) + '.' + ext
         fig.savefig(os.path.join(output_dir, '{}'.format(output_name)), dpi=dpi)
         plt.close('all')
+
+
+def vis_one_image_opencv(
+        im, boxes, segms=None, keypoints=None, thresh=0.9, kp_thresh=2,
+        show_box=False, dataset=None, show_class=False):
+    """Constructs a numpy array with the detections visualized."""
+
+    if isinstance(boxes, list):
+        boxes, segms, keypoints, classes = convert_from_cls_format(
+            boxes, segms, keypoints)
+
+    if boxes is None or boxes.shape[0] == 0 or max(boxes[:, 4]) < thresh:
+        return im
+
+    if segms is not None and len(segms) > 0:
+        masks = mask_util.decode(segms)
+        color_list = colormap()
+        mask_color_id = 0
+
+    # Display in largest to smallest order to reduce occlusion
+    areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+    sorted_inds = np.argsort(-areas)
+
+    for i in sorted_inds:
+        bbox = boxes[i, :4]
+        score = boxes[i, -1]
+        if score < thresh:
+            continue
+
+        # show box (off by default)
+        if show_box:
+            im = vis_bbox(
+                im, (bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]))
+
+        # show class (off by default)
+        if show_class:
+            class_str = get_class_string(classes[i], score, dataset)
+            im = vis_class(im, (bbox[0], bbox[1] - 2), class_str)
+
+        # show mask
+        if segms is not None and len(segms) > i:
+            color_mask = color_list[mask_color_id % len(color_list), 0:3]
+            mask_color_id += 1
+            im = vis_mask(im, masks[..., i], color_mask)
+
+        # show keypoints
+        if keypoints is not None and len(keypoints) > i:
+            im = vis_keypoints(im, keypoints[i], kp_thresh)
+
+    return im

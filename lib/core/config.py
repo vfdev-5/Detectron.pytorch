@@ -448,7 +448,7 @@ __C.MODEL.SHARE_RES5 = False
 # Whether to load imagenet pretrained weights
 # If True, path to the weight file must be specified.
 # See: __C.RESNETS.IMAGENET_PRETRAINED_WEIGHTS
-__C.MODEL.LOAD_IMAGENET_PRETRAINED_WEIGHTS = True
+__C.MODEL.LOAD_IMAGENET_PRETRAINED_WEIGHTS = False
 
 # ---------------------------------------------------------------------------- #
 # Unsupervise Pose

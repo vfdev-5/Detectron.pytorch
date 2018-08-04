@@ -141,6 +141,8 @@ def filter_for_training(roidb):
     num_after = len(filtered_roidb)
     logger.info('Filtered {} roidb entries: {} -> {}'.
                 format(num - num_after, num, num_after))
+    assert len(filtered_roidb) > 0, "No data found after the filtering: roidb entries: {} -> {}"\
+        .format(num, num_after)
     return filtered_roidb
 
 
