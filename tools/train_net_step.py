@@ -12,7 +12,6 @@ from collections import defaultdict
 import numpy as np
 import yaml
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import cv2
 cv2.setNumThreads(0)  # pytorch issue 1355: possible deadlock in dataloader
@@ -405,10 +404,6 @@ def main():
                 except StopIteration:
                     dataiterator = iter(dataloader)
                     input_data = next(dataiterator)
-
-                for key in input_data:
-                    if key != 'roidb': # roidb is a list of ndarrays with inconsistent length
-                        input_data[key] = list(map(Variable, input_data[key]))
 
                 net_outputs = maskRCNN(**input_data)
                 training_stats.UpdateIterStats(net_outputs, inner_iter)
