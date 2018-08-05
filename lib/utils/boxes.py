@@ -209,13 +209,14 @@ def bbox_transform_inv(boxes, gt_boxes, weights=(1.0, 1.0, 1.0, 1.0)):
     approximately the weights one would get from COCO using the previous unit
     stdev heuristic.
     """
-    ex_widths = boxes[:, 2] - boxes[:, 0] + 1.0
-    ex_heights = boxes[:, 3] - boxes[:, 1] + 1.0
+    eps = 1e-8
+    ex_widths = boxes[:, 2] - boxes[:, 0] + 1.0 + eps  # ato void zero width
+    ex_heights = boxes[:, 3] - boxes[:, 1] + 1.0 + eps  # to avoid zero height
     ex_ctr_x = boxes[:, 0] + 0.5 * ex_widths
     ex_ctr_y = boxes[:, 1] + 0.5 * ex_heights
 
-    gt_widths = gt_boxes[:, 2] - gt_boxes[:, 0] + 1.0
-    gt_heights = gt_boxes[:, 3] - gt_boxes[:, 1] + 1.0
+    gt_widths = np.clip(gt_boxes[:, 2] - gt_boxes[:, 0] + 1.0, 1.0, None)  # to avoid zero width
+    gt_heights = np.clip(gt_boxes[:, 3] - gt_boxes[:, 1] + 1.0, 1.0, None)  # to avoid zero height
     gt_ctr_x = gt_boxes[:, 0] + 0.5 * gt_widths
     gt_ctr_y = gt_boxes[:, 1] + 0.5 * gt_heights
 
